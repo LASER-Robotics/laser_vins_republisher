@@ -1,0 +1,32 @@
+/**/**:
+  ros__parameters:
+    # O OpenVins publica velocidades no referencial do corpo (alguns outros algoritmos não fazem isso)
+    # Quando falso, o republisher transformará as velocidades do referencial global (vins, navegação, mundo) para o referencial do corpo
+    velocity_in_body_frame: true
+
+    # Subtrai o primeiro ângulo de orientação de todas as mensagens para que a origem fique em zero 
+    # (O OpenVINS às vezes inicia rotacionado por pi/2)
+    init_in_zero: true
+
+    # Aguarda uma chamada de serviço que calibra o horizonte nivelado (zero de inclinação e arfagem)
+    # Algoritmos VINS inicializam durante o movimento inicial, então a origem pode não estar alinhada com a gravidade
+    compensate_initial_tilt: false
+
+    # Limita o processamento a esta taxa (a taxa real geralmente será um pouco menor)
+    # Desative para manter o processamento na taxa de FPS da câmera
+    rate_limiter:
+      enabled: false
+      max_rate: 100.0 # [Hz]
+    
+    transform:
+      fcu_frame: "fcu"
+      vins_imu_frame: "ov_imu"
+      vins_world_frame: "vins_world"
+      translations:
+        x: 0.0
+        y: 0.0
+        z: 0.0
+      rotations:
+        r: -1.570796
+        p: 0.0
+        y: -1.570796

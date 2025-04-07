@@ -43,7 +43,8 @@ find_library(laser_uav_lib laser_uav_lib)
 # Inclui diretórios de cabeçalhos
 include_directories(
   include
-  ${EIGEN3_INCLUDE_DIR}                           
+  ${EIGEN3_INCLUDE_DIR}    
+  ${laser_uav_lib_INCLUDE_DIRS}                       
 )
 
 # =====================================================
@@ -65,17 +66,15 @@ add_library(${vins_republisher_library_name} SHARED
 # Vincula dependências ao executável e à biblioteca do vins_republisher
 ament_target_dependencies(${vins_republisher_executable_name}
   ${dependencies}
-  laser_uav_lib                                             # Adiciona a dependência da laser_uav_lib
 )
 ament_target_dependencies(${vins_republisher_library_name}
   ${dependencies}
-  laser_uav_lib                                             # Adiciona a dependência da laser_uav_lib
 )
 
 # Vincula a biblioteca ao executável
 target_link_libraries(${vins_republisher_executable_name}
   ${vins_republisher_library_name}
-  ${laser_uav_lib}                                             # Vincula a laser_uav_lib ao executável
+  laser_uav_lib::attitude_converter                                             # Vincula a laser_uav_lib ao executável
 )
 
 # Registra o nó como um componente ROS2

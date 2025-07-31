@@ -13,23 +13,25 @@ namespace laser_vins_republisher
     {
         RCLCPP_INFO(get_logger(), "Creating");
 
-        declare_parameter("velocity_in_body_frame", rclcpp::ParameterValue(false));  ///< Default value for the parameter.
-        declare_parameter("init_in_zero", rclcpp::ParameterValue(false));            ///< Default value for the parameter.
-        declare_parameter("compensate_initial_tilt", rclcpp::ParameterValue(false)); ///< Default value for the parameter.
-        declare_parameter("rate_limiter.enabled", rclcpp::ParameterValue(false));    ///< Default value for the parameter.
-        declare_parameter("rate_limiter.max_rate", rclcpp::ParameterValue(10.0));    ///< Default value for the parameter.
+        declare_parameter("uav_name", rclcpp::ParameterValue(std::string("uav1")));
 
-        declare_parameter("UAV_NAME", rclcpp::ParameterValue(std::string("uav"))); ///< Default value for the parameter.
+        declare_parameter("velocity_in_body_frame", rclcpp::ParameterValue(false));
+        declare_parameter("init_in_zero", rclcpp::ParameterValue(true));
+        declare_parameter("compensate_initial_tilt", rclcpp::ParameterValue(false));
+        declare_parameter("rate_limiter.enabled", rclcpp::ParameterValue(false));
+        declare_parameter("rate_limiter.max_rate", rclcpp::ParameterValue(10.0));
 
-        declare_parameter("transform.fcu_frame", rclcpp::ParameterValue(std::string("fcu")));               ///< Default value for the parameter.
-        declare_parameter("transform.vins_imu_frame", rclcpp::ParameterValue(std::string("vins")));         ///< Default value for the parameter.
-        declare_parameter("transform.vins_world_frame", rclcpp::ParameterValue(std::string("vins_world"))); ///< Default value for the parameter.
-        declare_parameter("transform.translations.x", rclcpp::ParameterValue(0.0));                         ///< Default value for the parameter.
-        declare_parameter("transform.translations.y", rclcpp::ParameterValue(0.0));                         ///< Default value for the parameter.
-        declare_parameter("transform.translations.z", rclcpp::ParameterValue(0.0));                         ///< Default value for the parameter.
-        declare_parameter("transform.rotations.r", rclcpp::ParameterValue(0.0));                            ///< Default value for the parameter.
-        declare_parameter("transform.rotations.p", rclcpp::ParameterValue(0.0));                            ///< Default value for the parameter.
-        declare_parameter("transform.rotations.y", rclcpp::ParameterValue(0.0));                            ///< Default value for the parameter.
+        declare_parameter("fcu_frame", rclcpp::ParameterValue(std::string("uav1/fcu")));
+        declare_parameter("vins_frame", rclcpp::ParameterValue(std::string("uav1/ov_imu")));
+        declare_parameter("vins_world_frame", rclcpp::ParameterValue(std::string("uav1/vins_world")));
+
+        declare_parameter("static_transform.translation.x", rclcpp::ParameterValue(0.0));
+        declare_parameter("static_transform.translation.y", rclcpp::ParameterValue(0.0));
+        declare_parameter("static_transform.translation.z", rclcpp::ParameterValue(0.0));
+
+        declare_parameter("static_transform.rotation.roll", rclcpp::ParameterValue(0.0));
+        declare_parameter("static_transform.rotation.pitch", rclcpp::ParameterValue(0.0));
+        declare_parameter("static_transform.rotation.yaw", rclcpp::ParameterValue(0.0));
 
         broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);              ///< Broadcaster para enviar transformações.
         static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this); ///< Broadcaster para enviar transformações estáticas.
@@ -143,7 +145,7 @@ namespace laser_vins_republisher
     /* getParameters() //{ */
     void VinsRepublisher::getParameters()
     {
-        get_parameter("UAV_NAME", _uav_name_);
+        get_parameter("uav_name", _uav_name_);
 
         get_parameter("velocity_in_body_frame", _velocity_in_body_frame_);
         get_parameter("init_in_zero", _init_in_zero_);
@@ -151,24 +153,24 @@ namespace laser_vins_republisher
         get_parameter("rate_limiter.enabled", _rate_limiter_);
         get_parameter("rate_limiter.max_rate", _rate_limiter_max_);
 
-        get_parameter("transform.fcu_frame", _fcu_frame_);
-        get_parameter("transform.vins_imu_frame", _vins_fcu_frame_);
-        get_parameter("transform.vins_world_frame", _vins_world_frame_);
+        get_parameter("fcu_frame", _fcu_frame_);
+        get_parameter("vins_frame", _vins_fcu_frame_);
+        get_parameter("vins_world_frame", _vins_world_frame_);
 
         _fcu_frame_ = _uav_name_ + "/" + _fcu_frame_;
         _vins_fcu_frame_ = _uav_name_ + "/" + _vins_fcu_frame_;
         _vins_world_frame_ = _uav_name_ + "/" + _vins_world_frame_;
 
-        double x, y, z, r, p, yw;
-        get_parameter("transform.translations.x", x);
-        get_parameter("transform.translations.y", y);
-        get_parameter("transform.translations.z", z);
+        double x, y, z, roll, pitch, yaw;
+        get_parameter("static_transform.translation.x", x);
+        get_parameter("static_transform.translation.y", y);
+        get_parameter("static_transform.translation.z", z);
         _translation_ = Eigen::Vector3d(x, y, z);
 
-        get_parameter("transform.rotations.r", r);
-        get_parameter("transform.rotations.p", p);
-        get_parameter("transform.rotations.y", yw);
-        _rotation_ = Eigen::Vector3d(r, p, yw);
+        get_parameter("static_transform.rotation.roll", roll);
+        get_parameter("static_transform.rotation.pitch", pitch);
+        get_parameter("static_transform.rotation.yaw", yaw);
+        _rotation_ = Eigen::Vector3d(roll, pitch, yaw);
 
         RCLCPP_INFO(get_logger(), "Parameters loaded.");
     }
@@ -359,14 +361,15 @@ namespace laser_vins_republisher
 
             v2 = R_IMU_FCU.transpose() * v2;
 
-            v2 = R_GLOBAL_FCU.transpose() * v2;
+            /* v2 = R_GLOBAL_FCU.transpose() * v2; */
             linear_velocity.x = v2(0);
             linear_velocity.y = v2(1);
             linear_velocity.z = v2(2);
 
             Eigen::Vector3d v3;
             v3 << angular_velocity.x, angular_velocity.y, angular_velocity.z;
-            v3 = R_GLOBAL_FCU.transpose() * v3;
+            v3 = R_IMU_FCU.transpose() * v3;
+            /* v3 = R_GLOBAL_FCU.transpose() * v3; */
             angular_velocity.x = v3(0);
             angular_velocity.y = v3(1);
             angular_velocity.z = v3(2);

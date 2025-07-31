@@ -1,35 +1,36 @@
-<?xml version="1.0"?><!-- Declares the XML version being used (1.0) -->
-<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?><!-- Specifies the XML schema for validating this file (ROS package format 3) -->
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 
-<package format="3">  <!-- Declares the ROS package in format version 3 -->
-  <name>laser_vins_republisher</name>  <!-- Specifies the name of the package -->
-  <version>0.0.0</version>  <!-- Specifies the version of the package -->
-  <description>ROS 2 package for republishing VINS odometry data, TF2 transformations, and navigation messages, enabling integration with other perception and control systems for drones.</description>  <!-- Provides a short description of the package's functionality -->
+<package format="3">
+  <name>laser_vins_republisher</name>
+  <version>1.0.0</version>
+  <description>ROS2 package for republishing VINS odometry data</description>
 
-  <maintainer email="wagnergarcia@eng.ci.ufpb.br">Wagner Garcia</maintainer>  <!-- Specifies the maintainer of the package with an email address -->
+  <author email="wagnergarcia@eng.ci.ufpb.br">wagnerdgarcia</author>
+  <maintainer email="wagnergarcia@eng.ci.ufpb.br">wagnerdgarcia</maintainer>
 
-  <license>MIT</license>  <!-- Specifies the license under which the package is distributed (MIT License) -->
+  <license>MIT</license>
 
-  <buildtool_depend>ament_cmake</buildtool_depend>  <!-- Specifies the build tool dependency (ament_cmake for building the package in ROS 2) -->
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <!-- Declare runtime dependencies -->
-  <depend>rclcpp</depend>  <!-- Specifies the runtime dependency on rclcpp (ROS Client Library for C++) -->
-  <depend>rclcpp_lifecycle</depend>  <!-- Specifies the dependency for lifecycle management in ROS 2 nodes -->
-  <depend>rclcpp_components</depend>  <!-- Specifies the dependency for using components in ROS 2 -->
-  <depend>std_srvs</depend>  <!-- Specifies the dependency on the standard ROS 2 services package -->
-  <depend>geometry_msgs</depend>  <!-- Specifies the dependency for geometry message types (such as poses, points, etc.) -->
-  <depend>nav_msgs</depend>  <!-- Specifies the dependency for navigation-related messages (e.g., odometry, map data) -->
-  <depend>tf2</depend>  <!-- Specifies the dependency for TF2 library (used for coordinate transformations in ROS 2) -->
-  <depend>tf2_ros</depend>  <!-- Specifies the dependency for ROS 2-specific TF2 utilities -->
-  <depend>tf2_geometry_msgs</depend>  <!-- Specifies the dependency to convert between TF2 transformations and geometry_msgs message types (e.g., transforming coordinates of poses) -->
-  <depend>Eigen3</depend>  <!-- Specifies the dependency for Eigen3 library (used for linear algebra operations in ROS 2) -->
-  <depend>laser_uav_lib</depend>  <!-- Specifies the dependency on the custom ROS 2 library package 'laser_uav_lib' -->
+  <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>rclcpp_components</depend>
+  <depend>std_srvs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>tf2</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_geometry_msgs</depend>
+  <depend>Eigen3</depend>
+  <depend>laser_uav_lib</depend>
 
   <!-- Declare testing dependencies -->
-  <test_depend>ament_lint_auto</test_depend>  <!-- Specifies the dependency for automatic linting tools for ROS 2 packages -->
-  <test_depend>ament_lint_common</test_depend>  <!-- Specifies the dependency for common linting rules for ROS 2 packages -->
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
 
-  <export>    <!-- Specifies exported settings or additional configurations for the package -->
-    <build_type>ament_cmake</build_type>    <!-- Declares the build type as 'ament_cmake' for this package -->
+  <export>
+    <build_type>ament_cmake</build_type>
   </export>
-</package><!-- Closing tag for the ROS package definition -->
+</package>

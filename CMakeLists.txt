@@ -1,32 +1,28 @@
-cmake_minimum_required(VERSION 3.8)                         # Define a versão mínima do CMake necessária
-project(laser_vins_republisher)                             # Define o nome do projeto
+cmake_minimum_required(VERSION 3.8)
+project(laser_vins_republisher)
 
-# Configuração do padrão C++
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 17)                                # Define o padrão C++17
-  set(CMAKE_CXX_STANDARD_REQUIRED ON)                       # Torna o C++17 obrigatório
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
-# Opções de compilação para GCC/Clang
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)             # Habilita avisos extras
+  add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# Busca por dependências
-find_package(ament_cmake REQUIRED)                          # Sistema de build do ROS2
-find_package(rclcpp REQUIRED)                               # Biblioteca principal para nós ROS2
-find_package(rclcpp_lifecycle REQUIRED)                     # Gerenciamento de ciclo de vida
-find_package(rclcpp_components REQUIRED)                    # Componentes ROS2
-find_package(geometry_msgs REQUIRED)                        # Mensagens de geometria
-find_package(nav_msgs REQUIRED)                             # Mensagens de navegação
-find_package(std_srvs REQUIRED)                             # Serviços padrão
-find_package(tf2 REQUIRED)                                  # Transformações de coordenadas
-find_package(tf2_ros REQUIRED)                              # TF2 para ROS2
-find_package(tf2_geometry_msgs REQUIRED)                    # Conversão de mensagens de geometria
-find_package(Eigen3 REQUIRED)                               # Biblioteca Eigen3
-find_package(laser_uav_lib REQUIRED)                        # Biblioteca laser_uav_lib 
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(laser_uav_lib REQUIRED)
 
-# Lista de dependências comuns
 set(dependencies
   rclcpp
   rclcpp_lifecycle

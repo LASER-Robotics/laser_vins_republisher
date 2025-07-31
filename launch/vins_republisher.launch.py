@@ -1,6 +1,8 @@
+import os
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler, EmitEvent
-from launch.substitutions import EnvironmentVariable, PathJoinSubstitution, LaunchConfiguration
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration, PythonExpression
 from launch_ros.actions import LifecycleNode
 from launch_ros.substitutions import FindPackageShare
 from launch.events import matches_action
@@ -11,88 +13,64 @@ import lifecycle_msgs.msg
 
 
 def generate_launch_description():
-    # === Declaração dos argumentos ===
+    # Declare arguments
     declared_arguments = []
 
     declared_arguments.append(
         DeclareLaunchArgument(
             'namespace',
-            # default_value='uav3_bags',
-            default_value=EnvironmentVariable('UAV_NAME'),
-            description='Top-level namespace.'
-        )
-    )
+            default_value=os.getenv('UAV_NAME', "uav1"),
+            description='Top-level namespace.'))
 
     declared_arguments.append(
         DeclareLaunchArgument(
-            'vins_republisher_file',
-            default_value=PathJoinSubstitution([
-                FindPackageShare('laser_vins_republisher'),
-                'params',
-                'vins_republisher.yaml'
-            ]),
-            description='Full path to the file with the vins_republisher parameters.'
-        )
-    )
+            'use_sim_time',
+            default_value=PythonExpression(['"', os.getenv('REAL_UAV', "true"), '" == "false"']),
+            description='Whether use the simulation time.'))
 
-    # === Inicializa LaunchConfiguration ===
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            'vins_republisher_params_file',
+            default_value=PathJoinSubstitution([FindPackageShare('laser_vins_republisher'),
+                                                'params', 'vins_republisher.yaml']),
+            description='Full path to the file with the parameters.'))
+
+    # Initialize arguments
     namespace = LaunchConfiguration('namespace')
-    vins_republisher_file = LaunchConfiguration('vins_republisher_file')
+    use_sim_time = LaunchConfiguration('use_sim_time')
+    vins_republisher_params_file = LaunchConfiguration('vins_republisher_params_file')
 
-    # === Criação do LifecycleNode ===
-    vins_republisher_node = LifecycleNode(
+    # Declare nodes
+    vins_republisher_lifecycle_node = LifecycleNode(
         package='laser_vins_republisher',
         executable='vins_republisher',
         name='vins_republisher',
         namespace=namespace,
         output='screen',
-        parameters=[
-            vins_republisher_file,
-            {'UAV_NAME': namespace}
-        ],
-        remappings=[
-            ('odometry_in', 'ov_msckf/odomimu'),
-            ('odometry_out', 'vins_republisher/odom'),
-        ]
-    )
+        parameters=[vins_republisher_params_file,
+                    {'uav_name': namespace,
+                    'use_sim_time': use_sim_time}],
+        remappings=[('odometry_in', 'ov_msckf/odomimu'),
+                    ('odometry_out', 'vins_republisher/odometry')])
 
-    # === Handlers para configurar e ativar automaticamente ===
-    event_handlers = [
-        RegisterEventHandler(
-            OnProcessStart(
-                target_action=vins_republisher_node,
-                on_start=[
-                    EmitEvent(event=ChangeState(
-                        lifecycle_node_matcher=matches_action(vins_republisher_node),
-                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
-                    )),
-                ],
-            )
-        ),
-        RegisterEventHandler(
-            OnStateTransition(
-                target_lifecycle_node=vins_republisher_node,
-                start_state='configuring',
-                goal_state='inactive',
-                entities=[
-                    EmitEvent(event=ChangeState(
-                        lifecycle_node_matcher=matches_action(vins_republisher_node),
-                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
-                    )),
-                ],
-            )
-        )
-    ]
+    change_to_configure_state_event_handler = RegisterEventHandler(
+        OnProcessStart(
+            target_action=vins_republisher_lifecycle_node,
+            on_start=[
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(vins_republisher_lifecycle_node),
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE))]))
 
-    # === Composição do LaunchDescription ===
-    ld = LaunchDescription()
+    change_to_activate_state_event_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=vins_republisher_lifecycle_node,
+            start_state='configuring',
+            goal_state='inactive',
+            entities=[
+                EmitEvent(event=ChangeState(
+                    lifecycle_node_matcher=matches_action(vins_republisher_lifecycle_node),
+                    transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE))]))
 
-    for arg in declared_arguments:
-        ld.add_action(arg)
-
-    ld.add_action(vins_republisher_node)
-
-    for handler in event_handlers:
-        ld.add_action(handler)
-
-    return ld
+    return LaunchDescription(declared_arguments + [vins_republisher_lifecycle_node,
+                                                   change_to_configure_state_event_handler,
+                                                   change_to_activate_state_event_handler])

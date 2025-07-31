@@ -18,15 +18,18 @@
       enabled: false
       max_rate: 100.0 # [Hz]
     
-    transform:
-      fcu_frame: "fcu"
-      vins_imu_frame: "ov_imu"
-      vins_world_frame: "vins_world"
-      translations:
+    vins_world_frame: 'vins_world'
+
+    # Transform between FCU and VINS body (IMU) frame
+    fcu_frame: 'fcu'
+    vins_frame: 'ov_imu'
+
+    static_transform:
+      translation:
         x: 0.0
         y: 0.0
         z: 0.0
-      rotations:
-        r: -1.570796
-        p: 0.0
-        y: -1.570796
+      rotation:
+        roll: -1.570796
+        pitch: 0.0
+        yaw: -1.570796

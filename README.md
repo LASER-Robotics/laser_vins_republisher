@@ -1,68 +1,51 @@
 # LASER VINS Republisher
 
-This package provides a **ROS 2 node** that acts as a bridge between the VINS-Fusion state estimator and the Laser UAV System (LUS).
+`laser_vins_republisher` converts OpenVINS odometry into the FCU and odometry frames used by the LASER UAV System (LUS). It applies the camera/IMU mounting transform, rotates velocities and covariances, and publishes the result for `estimation_manager`.
 
-## Overview
+The package provides a ROS 2 lifecycle node. Its launch file configures and activates it automatically.
 
-The main objective of this package is to process the odometry data coming from visual-inertial odometry (VIO) systems, specifically OPENVins. It handles frame transformations, velocity rotations, and initialization resets to ensure the odometry is compatible with the downstream EKF (e.g., `laser_uav_estimators`).
+## Run
 
-### Key Functionalities
-1.  **Frame Transformation:** Applies a static transform between the Flight Controller (FCU) frame and the VINS IMU frame.
-2.  **Velocity Adjustment:** Can transform velocities from the global frame to the body frame if required.
-3.  **Initialization Handling:** Options to reset the initial heading to zero or compensate for initial tilt, ensuring a consistent starting state.
-4.  **Rate Limiting:** Optional downsampling of the odometry output to save computational resources.
+```bash
+ros2 launch laser_vins_republisher vins_republisher.launch.py namespace:=uav1
+```
 
-## Provided Nodes
+Start OpenVINS separately. The supplied launch connects to its `ov_msckf/odomimu` output in the same namespace.
 
-### 1. `vins_republisher_node`
--   **Description:** This node subscribes to the raw odometry from VINS, applies coordinate transformations, handles frame alignments, and republishes the data for the estimator.
+## Interfaces
 
--   **Subscribed Topics:**
-    -   `/vins_estimator/odometry`: The raw odometry output from VINS-Fusion.
+For `namespace:=uav1`:
 
--   **Published Topics:**
-    -   `~/odometry`: The processed odometry ready for sensor fusion.
-    -   `~/path`: The trajectory path of the UAV for visualization.
+| Direction | Topic | Type | Purpose |
+| --- | --- | --- | --- |
+| Input | `/uav1/ov_msckf/odomimu` | `nav_msgs/msg/Odometry` | Raw visual-inertial state. |
+| Output | `/uav1/vins_republisher/odometry` | `nav_msgs/msg/Odometry` | Transformed pose, velocity and covariance. |
+| Output | `/tf_static` | `tf2_msgs/msg/TFMessage` | Configured FCU-to-VINS mounting transform. |
+| Output | `/tf` | `tf2_msgs/msg/TFMessage` | Dynamic frame relationships used by the republisher. |
 
--   **Configurable Parameters:**
-    ```yaml
-    vins_republisher_node:
-      ros__parameters:
-        # VINS Frame Settings
-        vins_world_frame: 'vins_world'
-        fcu_frame: 'fcu'       # The frame ID of the flight controller
-        vins_frame: 'ov_imu'   # The frame ID of the VINS IMU
+The node-level input and output names are `odometry_in` and `odometry_out`. The implementation does not publish a `path` topic. It requires the mounting transform at the input timestamp before publishing odometry.
 
-        # Velocity Handling
-        # OpenVins typically publishes velocities in the body frame.
-        # If false, the node transforms global frame velocities to the body frame.
-        velocity_in_body_frame: true
+## Configuration
 
-        # Initialization
-        # Subtracts the initial orientation so the output starts at zero (identity quaternion).
-        # Useful because VINS often initializes with an arbitrary yaw.
-        init_in_zero: true
+Use [params/vins_republisher.yaml](params/vins_republisher.yaml), or select another file with `vins_republisher_params_file`.
 
-        # If true, waits for a service call to calibrate the level horizon (zero pitch/roll).
-        # Helps if VINS initialized while the drone was not perfectly level.
-        compensate_initial_tilt: false
+| Parameter | Supplied value | Meaning |
+| --- | --- | --- |
+| `velocity_in_body_frame` | `true` | Input velocities are already in the body frame. Set `false` for an input that needs world-to-body rotation. |
+| `init_in_zero` | `true` | Removes the initial heading offset. |
+| `compensate_initial_tilt` | `false` | Enables the initial tilt-calibration path. Keep disabled in this checkout: it waits for calibration, but no calibration service is created. |
+| `rate_limiter.enabled` | `false` | Enables output rate limiting. |
+| `rate_limiter.max_rate` | `100.0` | Maximum processing rate in Hz when limiting is enabled. |
+| `vins_world_frame` | `vins_world` | Output odometry frame suffix. |
+| `fcu_frame` | `fcu` | FCU frame suffix. |
+| `vins_frame` | `ov_imu` | VINS IMU frame suffix. |
+| `static_transform.translation.{x,y,z}` | `0.0` on each axis | Mounting translation in metres. |
+| `static_transform.rotation.{roll,pitch,yaw}` | `-1.570796`, `0.0`, `-1.570796` | Mounting rotation in radians. |
 
-        # Rate Limiter
-        # Limits the output frequency to save resources (e.g., if VINS runs at camera FPS).
-        rate_limiter:
-          enabled: false
-          max_rate: 100.0 # Hz
+The node prefixes the configured frame suffixes with `uav_name`, supplied by the launch from `namespace`. For example, `fcu` becomes `uav1/fcu`. Use the measured mounting transform for your vehicle.
 
-        # Static Transform (Rotation/Translation from FCU to VINS Frame)
-        # This defines the physical rotation between the controller definition and VINS definition.
-        static_transform:
-          translation:
-            x: 0.0
-            y: 0.0
-            z: 0.0
-          rotation:
-            # Example: -90 degrees roll and -90 degrees yaw
-            roll: -1.570796
-            pitch: 0.0
-            yaw: -1.570796
-    ```
+| Launch argument | Default | Meaning |
+| --- | --- | --- |
+| `namespace` | `UAV_NAME`, or `uav1` | Node namespace and `uav_name`. |
+| `use_sim_time` | `true` when `REAL_UAV=false` | Uses the simulation clock. |
+| `vins_republisher_params_file` | Installed `params/vins_republisher.yaml` | Full path to the parameter file. |
